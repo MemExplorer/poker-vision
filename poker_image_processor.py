@@ -74,6 +74,15 @@ def flattener(image, pts, w, h):
     warp = cv2.cvtColor(warp,cv2.COLOR_BGR2GRAY)
     return warp
 
+def process_card_image2(image):
+    gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray,(5,5),0)
+
+    #separate foreground objects from background
+    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
+
+    return thresh
+
 def process_card_image(image):
     gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray,(3,3),0)
@@ -81,14 +90,16 @@ def process_card_image(image):
     img_w, img_h = np.shape(image)[:2]
     bkg_level = gray[int(img_h/100)][int(img_w/2)]
     thresh_level = bkg_level + BKG_THRESH
-
-    thresh = cv2.threshold(blur,thresh_level,255,cv2.THRESH_BINARY)
+    #separate foreground objects from background
+    thresh = cv2.threshold(blur,thresh_level,255, cv2.THRESH_BINARY)
 
     return thresh[1]
 
 def get_card_contours(thresh):
     cnts, hier = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
+    max_val = [cv2.contourArea(z) for z in cnts]
+    max_val.sort(reverse=True)
     valid_conts = []
     for i in range(len(cnts)):
         size = cv2.contourArea(cnts[i])
@@ -96,13 +107,30 @@ def get_card_contours(thresh):
         approx = cv2.approxPolyDP(cnts[i],0.01*peri,True)
         
         if ((size < CARD_MAX_AREA) and (size > CARD_MIN_AREA)
-            and (hier[0][i][3] == -1) and (len(approx) == 4)):
+            and (len(approx) == 4)):
             valid_conts.append(cnts[i])
 
-    return valid_conts
+    #sort the detected cards by their area in descending order
+    valid_conts.sort(key=lambda x: cv2.contourArea(x), reverse=True)
+
+    valid_conts2 = []
+    #iterate through the sorted cards and exclude detection inside another detection
+    for i, card in enumerate(valid_conts):
+        is_inside = False
+        for j, other_card in enumerate(valid_conts):
+            if i != j:
+                ptt = tuple([int(round(card[0][0][0])), int(round(card[0][0][1]))])
+                result = cv2.pointPolygonTest(other_card, ptt, False)
+                if result == 1:
+                    is_inside = True
+                    break
+        if not is_inside:
+            valid_conts2.append(card)
+
+    return valid_conts2
 
 def get_contour_points(contour):
-    # Find perimeter of card and use it to approximate corner points
+    #find perimeter of card and use it to approximate corner points
     peri = cv2.arcLength(contour,True)
     approx = cv2.approxPolyDP(contour,0.01*peri,True)
     pts = np.float32(approx)
@@ -137,6 +165,8 @@ def get_corner_info_image(flattened_img):
     c_width = int(w * x_percent)
     cropped_info = flattened_img[y:y+int(h * y_percent), x:x+c_width]
     resized_card_info_img = cv2.resize(cropped_info, (0,0), fx=4, fy=4)
+
+    #update values to calculate card info image size
     x,y,w,h = cv2.boundingRect(resized_card_info_img)
     cent_y = int(h * 0.6)
 
@@ -151,3 +181,5 @@ def get_corner_info_image(flattened_img):
     #split card symbol and value
     card_rank_img = remove_spaces(threshed[20:cent_y, 0:w])
     card_val_img = remove_spaces(threshed[cent_y:cent_y + (h - cent_y), 0:w])
+
+    return (card_rank_img, card_val_img)
