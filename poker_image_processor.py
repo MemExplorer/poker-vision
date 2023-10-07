@@ -151,3 +151,4 @@ def get_corner_info_image(flattened_img):
     #split card symbol and value
     card_rank_img = remove_spaces(threshed[20:cent_y, 0:w])
     card_val_img = remove_spaces(threshed[cent_y:cent_y + (h - cent_y), 0:w])
+    return card_rank_img, card_val_img

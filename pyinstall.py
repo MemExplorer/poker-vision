@@ -1,4 +1,8 @@
 from subprocess import call
+from symbol import except_clause
+
+class CustomError(Exception):
+    pass
 
 def installPip(log=print):
     """
@@ -8,7 +12,7 @@ def installPip(log=print):
     """
     log("Installing pip, the standard Python Package Manager, first")
     from os     import remove
-    from urllib import urlretrieve
+    from urllib.request import urlretrieve
     urlretrieve("https://bootstrap.pypa.io/get-pip.py", "get-pip.py")
     call(["python", "get-pip.py"])
 
@@ -26,13 +30,16 @@ def getPip(log=print):
     # tested and works on Windows, but will likely need tweaking for other OS's.
     # On OS X, I seem to have pip at /usr/local/bin/pip?
     pipPath = join(prefix, 'Scripts', 'pip.exe')
+    print("PIP PATH:",pipPath)
 
     # Check if pip is installed, and install it if it isn't.
     if not isfile(pipPath):
-        installPip(log)
-        if not isfile(pipPath):
-            raise("Failed to find or install pip!")
+        try:
+            installPip(log)
+        
+        except CustomError as e:
+            print(f"Failed to find or install pip!: {e}")
     return pipPath
 
 def install_requirements(req_path, log=print):
-    call([getPip(log), "install", "-r",req_path])
+    call(['pip', "install", "-r",req_path])

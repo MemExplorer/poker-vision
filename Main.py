@@ -19,7 +19,7 @@ def draw_image(image, points):
     cv2.line(image, pt4, pt1, color, 3)
 
 def main():
-    img_path = "test_data/royalflush_ace/IMG20231006142219.jpg"
+    img_path = "test_data/royalflush_spade/IMG20231006142219.jpg"
     image = cv2.imread(img_path)
     image = cv2.resize(image, (1920, 1080))
     thresh = ip.process_card_image(image)
@@ -27,7 +27,7 @@ def main():
     for c in conts:
         fl = ip.flatten_perspective_transform(c, image)
         rank_img, val_img = ip.get_corner_info_image(fl)
-    show_image(image)
+        show_image(val_img)
     cv2.waitKey(0)
 
 if __name__ == "__main__":
