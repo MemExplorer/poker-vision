@@ -74,7 +74,7 @@ def flattener(image, pts, w, h):
     warp = cv2.cvtColor(warp,cv2.COLOR_BGR2GRAY)
     return warp
 
-def process_card_image2(image):
+def process_card_image(image):
     gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray,(5,5),0)
 
@@ -82,18 +82,6 @@ def process_card_image2(image):
     thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
 
     return thresh
-
-def process_card_image(image):
-    gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray,(3,3),0)
-
-    img_w, img_h = np.shape(image)[:2]
-    bkg_level = gray[int(img_h/100)][int(img_w/2)]
-    thresh_level = bkg_level + BKG_THRESH
-    #separate foreground objects from background
-    thresh = cv2.threshold(blur,thresh_level,255, cv2.THRESH_BINARY)
-
-    return thresh[1]
 
 def get_card_contours(thresh):
     cnts, hier = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
