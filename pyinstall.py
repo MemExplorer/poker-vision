@@ -1,8 +1,4 @@
 from subprocess import call
-from symbol import except_clause
-
-class CustomError(Exception):
-    pass
 
 def installPip(log=print):
     """
@@ -37,7 +33,7 @@ def getPip(log=print):
         try:
             installPip(log)
         
-        except CustomError as e:
+        except Exception as e:
             print(f"Failed to find or install pip!: {e}")
     return pipPath
 
