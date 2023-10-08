@@ -23,3 +23,5 @@ class cardinfo:
     def __init__(self, shape, value):
         self.shape = shape
         self.value = value
+    def __eq__(self, c):
+            return self.shape == c.shape and self.value == c.value
