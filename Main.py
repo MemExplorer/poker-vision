@@ -63,7 +63,6 @@ def test_all_images():
             img_path = os.path.join(root, file)
             image = cv2.imread(img_path)
             image = cv2.resize(image, (1920, 1080))
-
             thresh = ip.process_card_image(image)
             conts = ip.get_card_contours(thresh)
 
@@ -71,7 +70,6 @@ def test_all_images():
             for c in conts:
                 fl = ip.flatten_perspective_transform(c, image)
                 rank_img, val_img = ip.get_corner_info_image(fl)
-
                 gathered_text.append(ip.perform_card_comparision(rank_img))
 
             print(base_name, ":", gathered_text)
