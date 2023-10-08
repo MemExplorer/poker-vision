@@ -55,9 +55,12 @@ def group_near_cards(card_list):
 
 
 def main():
+    # Install Tesseract executable first
+    # Link here: https://digi.bib.uni-mannheim.de/tesseract/tesseract-ocr-w64-setup-5.3.1.20230401.exe
     pytesseract.pytesseract.tesseract_cmd = (
         r"C:\Program Files\Tesseract-OCR\tesseract.exe"
     )
+
     # img_path = "test_data/royalflush_ace/IMG20231006142219.jpg"
     # img_path = "test_data/tilted/IMG20231007175210.jpg"
     img_path = "poker-vision/test_data/royalflush_spade/IMG20231006142745.jpg"
@@ -82,7 +85,7 @@ def main():
         # cv2.drawContours(image, c, -1, (0, 255, 0), 2)
 
         # perform canny edge detection
-        edge_img = ip.canny_edge_detection(rank_img)
+        edge_img = ip.canny_edge_detection(val_img)
 
         show_image(edge_img)
 
