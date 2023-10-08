@@ -13,7 +13,7 @@ def cluster_cards_by_shape(card_list, find_len = 5):
         shape_dict[card_list.shape].append(c)
 
     # look for group that has `find_len` cards in a shape
-    tmp_list = [len(g) == find_len for g in shape_dict]
+    tmp_list = [g for g in shape_dict if len(g) == find_len]
     if len(tmp_list) > 0:
         return tmp_list
     
@@ -30,7 +30,7 @@ def cluster_cards_by_value(card_list, find_len = 4):
         value_dict[card_list.value].append(c)
 
     # look for group that has `find_len` cards in a value
-    tmp_list = [len(g) == find_len for g in value_dict]
+    tmp_list = [g for g in value_dict if len(g) == find_len]
     if len(tmp_list) > 0:
         return tmp_list
 
