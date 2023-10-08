@@ -71,7 +71,6 @@ def test_all_images():
             for c in conts:
                 fl = ip.flatten_perspective_transform(c, image)
                 rank_img, val_img = ip.get_corner_info_image(fl)
-
                 gathered_text.append(ip.perform_card_comparision(rank_img))
 
             print(base_name, ":", gathered_text)
