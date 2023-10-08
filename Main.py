@@ -2,6 +2,7 @@ import cv2
 import poker_image_processor as ip
 import numpy as np
 import os
+from poker_ocr_engine import poker_ocr
 
 
 def show_image(image):
@@ -34,6 +35,21 @@ def find_if_close(cnt1, cnt2):
             elif i == row1 - 1 and j == row2 - 1:
                 return False
 
+def set_text(image, name, pts):
+    average = np.sum(pts, axis=0)/len(pts)
+    text_x = int(average[0][0])
+    text_y = int(average[0][1])
+    # Define the text and font parameters
+    text = name
+    font = cv2.LINE_AA
+    font_scale = 1
+    font_color = (0, 255, 0)  # Black color in BGR
+    font_thickness = 2
+
+    yadd = int(average[0][1] * 0.3)
+
+    # Put the text on the image
+    cv2.putText(image, text, (text_x - 60, text_y + yadd), font, font_scale, font_color, font_thickness)
 
 def group_near_cards(card_list):
     ret = []
@@ -76,33 +92,31 @@ def test_all_images():
 
 
 def main():
+    ocr = poker_ocr("test_data/training")
+    ocr.initialize()
     # img_path = "test_data/royalflush_ace/IMG20231006142219.jpg"
     # img_path = "test_data/tilted/IMG20231007175210.jpg"
-    img_path = "poker-vision/test_data/royalflush_spade/IMG20231006142542.jpg"
+    img_path = "test_data/unique cards/IMG20231008001157.jpg"
     image = cv2.imread(img_path)
     image = cv2.resize(image, (1920, 1080))
-
+    show_image(image)
     thresh = ip.process_card_image(image)
     conts = ip.get_card_contours(thresh)
     # testsdf = group_near_cards(conts)
 
-    gathered_text = []
     for c in conts:
         x, y, w, h = cv2.boundingRect(c)
         fl = ip.flatten_perspective_transform(c, image)
         rank_img, val_img = ip.get_corner_info_image(fl)
         pts = ip.get_contour_points(c)
+        shape = ocr.scan_shape(val_img)
+        rank = ocr.scan_rank(rank_img)
+        print()
         draw_image(image, pts)
-        # show_image(fl)
-        # show_image(rank_img)
-        # show_image(val_img)
-        # cv2.rectangle(image, (x, y), (x + w, y + h),(36,255,12))
-        # cv2.drawContours(image, c, -1, (0, 255, 0), 2)
-        gathered_text.append(ip.perform_card_comparision(rank_img))
+        set_text(image, ocr.get_text_from_rank_id(rank) + " " + ocr.get_text_from_shape_id(shape), pts)
 
-    print(gathered_text)
-
+    show_image(image)
+    cv2.imwrite("test.jpg", image)
 
 if __name__ == "__main__":
-    test_all_images()
-    # main()
+    main()
