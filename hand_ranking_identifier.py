@@ -47,17 +47,11 @@ class detect_royal_flush(detector_base):
         
     def detect(self, cardinfo_z):
         royalFlush = [cardvalue.A, cardvalue.K, cardvalue.Q, cardvalue.J, cardvalue.TEN]
-        
-        shape_list = [c.shape for c in cardinfo_z]
-        
-        if len(set(shape_list)) != 1:
+        valid_value_cards_shape = [c.shape for c in cardinfo_z if c.value in royalFlush]
+        if len(valid_value_cards_shape) < 5:
             return False
-            
-        for v in range(len(cardinfo_z)):
-            if cardinfo_z[v].value not in royalFlush:
-                return False
         
-        return True
+        return len(set(valid_value_cards_shape)) == 1
     
 class detect_flush(detector_base):
     def __init__(self):
