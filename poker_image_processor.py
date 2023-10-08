@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import os
 
 # constants
 CARD_MAX_AREA = 10000000
@@ -200,11 +201,49 @@ def get_corner_info_image(flattened_img):
     return (card_rank_img, card_val_img)
 
 
-def canny_edge_detection(cut_out_img):
-    # Apply Gaussian blur to reduce noise and smoothen edges
-    blurred = cv2.GaussianBlur(src=cut_out_img, ksize=(5, 5), sigmaX=2.3)
+def perform_card_comparision(reference_img):
+    folder_path = "poker-vision/training"
 
-    # Perform Canny edge detection
-    edges = cv2.Canny(blurred, 70, 135)
+    # Threshold of similarity
+    similarity_thresh = 1000
 
-    return edges
+    if reference_img is None:
+        print("Error: Unable to load reference image.")
+    else:
+        # Check if the image is already grayscale
+        if len(reference_img.shape) != 2:
+            # Convert the image to grayscale
+            reference_img = cv2.cvtColor(reference_img, cv2.COLOR_BGR2GRAY)
+            # Now you can use reference_img_gray for further processing
+
+    highest_similarity_per = 0
+    current_matching_str = ""
+    # iterate all the images located in the folder
+    for filename in os.listdir(folder_path):
+        base_name, extension = os.path.splitext(filename)
+        image_path = os.path.join(folder_path, filename)
+        comparison_img = cv2.imread(image_path)
+
+        # Resize the comparison image to match the dimensions of the reference image
+        comparison_img = cv2.resize(
+            comparison_img, (reference_img.shape[1], reference_img.shape[0])
+        )
+
+        comp_gray = cv2.cvtColor(comparison_img, cv2.COLOR_BGR2GRAY)
+
+        diff = cv2.absdiff(reference_img, comp_gray)
+
+        # Calculate the Mean Squared Error (MSE)
+        mse = np.mean((diff / 255.0) ** 2)
+
+        # Convert MSE to a percentage of dissimilarity (0% to 100%)
+        similarity_percentage = (1 - mse) * 100
+
+        if similarity_percentage > highest_similarity_per:
+            highest_similarity_per = similarity_percentage
+            if len(base_name) > 2:
+                current_matching_str = base_name[-2:]
+            else:
+                current_matching_str = base_name[-1]
+
+    return current_matching_str
