@@ -4,7 +4,6 @@ import numpy as np
 #constants
 CARD_MAX_AREA = 10000000
 CARD_MIN_AREA = 25000
-BKG_THRESH = 10
 
 def flattener(image, pts, w, h):
     """Flattens an image of a card into a top-down 200x300 perspective.
@@ -86,8 +85,6 @@ def process_card_image(image):
 def get_card_contours(thresh):
     cnts, hier = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    max_val = [cv2.contourArea(z) for z in cnts]
-    max_val.sort(reverse=True)
     valid_conts = []
     for i in range(len(cnts)):
         size = cv2.contourArea(cnts[i])
