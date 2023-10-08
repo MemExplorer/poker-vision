@@ -3,7 +3,7 @@ from poker_card import cardvalue
 def cluster_cards_by_shape(card_list, find_len = 5):
 
     # temporary list to store clustered values
-    shape_dict = []
+    shape_dict = {}
     for c in card_list:
         # initialize list if shape is not in dict yet
         if card_list.shape not in shape_dict:
@@ -20,7 +20,7 @@ def cluster_cards_by_shape(card_list, find_len = 5):
 def cluster_cards_by_value(card_list, find_len = 4):
 
     # temporary list to store clustered values
-    value_dict = []
+    value_dict = {}
     for c in card_list:
         # initialize list if value is not in dict yet
         if card_list.value not in value_dict:
