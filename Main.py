@@ -3,7 +3,6 @@ import poker_image_processor as ip
 import cv2utils
 from poker_ocr_engine import poker_ocr
 from poker_card import cardinfo, analysed_poker_card
-import numpy as np
 
 import hand_ranking_identifier as hid
 detector_list = [
@@ -98,19 +97,39 @@ def detect_cards_from_image(ocr, image):
         ranking = "Unknown" if len(player_cards) < 2 else detect_hand_ranking(dealer_cards, player_cards)
         cv2utils.highlight_grouped_cards(image, player_img_cards[p], f"Player {p + 1} ({ranking})")
 
+def edit_video(ocr, vid_path):
+    source = cv2.VideoCapture(vid_path)  
+    source.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    source.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)                                                                                                                        
+    # iterate through all the frames if the video clip present
+    while(source.isOpened()):                                                                                                                                                 
+        #read the frame
+        ret, frame = source.read()
+        detect_cards_from_image(ocr, frame)                                                                                                                                                    
+        #check for flag
+    
+        cv2.imshow('frame', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break                                                                                                                                  
+    print("Done")
+
 def main():
     ocr = poker_ocr("test_data/training")
     ocr.initialize()
     # img_path = "test_data/royalflush_ace/IMG20231006142219.jpg"
     # img_path = "test_data/tilted/IMG20231007175210.jpg"
-    img_path = "test_data/unique cards/IMG20231009212515.jpg"
-    image = cv2.imread(img_path)
-    image = cv2.resize(image, (1920, 1080))
-    detect_cards_from_image(ocr, image)
+    #img_path = "test_data/unique cards/IMG20231009210620.jpg"
+    #image = cv2.imread(img_path)
+    #image = cv2.resize(image, (1920, 1080))
+
+    
+    #edit_video(ocr, "VID20231009224507.mp4")
 
 
-    cv2utils.show_image(image)
-    cv2.imwrite("test.jpg", image)
+    #detect_cards_from_image(ocr, image)
+    #cv2utils.show_image(image)
+    #cv2.imwrite("test.jpg", image)
 
 if __name__ == "__main__":
     main()

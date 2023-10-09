@@ -4,7 +4,7 @@ from functools import cmp_to_key
 
 #constants
 CARD_MAX_AREA = 10000000
-CARD_MIN_AREA = 15000
+CARD_MIN_AREA = 15000 #5000 if 1280x720
 
 def flattener(image, pts, w, h):
     """Flattens an image of a card into a top-down 200x300 perspective.
