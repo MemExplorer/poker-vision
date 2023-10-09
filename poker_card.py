@@ -24,37 +24,40 @@ class cardinfo:
         self.shape = shape
         self.value = value
 
+    def __str__(self):
+        return f"{cardinfo.get_text_from_rank_id(self.value)} of {cardinfo.get_text_from_shape_id(self.shape)}s"
+
     def __repr__(self) -> str:
         return f"{cardinfo.get_text_from_rank_id(self.value)} of {cardinfo.get_text_from_shape_id(self.shape)}s"
 
     def get_text_from_rank_id(id):
         match id:
             case cardvalue.TWO:
-                return "2"
+                return "Two"
             case cardvalue.THREE:
-                return "3"
+                return "Three"
             case cardvalue.FOUR:
-                return "4"
+                return "Four"
             case cardvalue.FIVE:
-                return "5"
+                return "Five"
             case cardvalue.SIX:
-                return "6"
+                return "Six"
             case cardvalue.SEVEN:
-                return "7"
+                return "Seven"
             case cardvalue.EIGHT:
-                return "8"
+                return "Eight"
             case cardvalue.NINE:
-                return "9"
+                return "Nine"
             case cardvalue.TEN:
-                return "10"
+                return "Ten"
             case cardvalue.A:
-                return "A"
+                return "Ace"
             case cardvalue.J:
-                return "J"
+                return "Jack"
             case cardvalue.Q:
-                return "Q"
+                return "Queen"
             case cardvalue.K:
-                return "K"
+                return "King"
             case _:
                 raise "invalid id!"
 
@@ -71,6 +74,14 @@ class cardinfo:
             case _:
                 raise "invalid id!"
 
+class analysed_poker_card:
+    def __init__(self, pts, card):
+        self.points = pts
+        self.card = card
+
+    def __repr__(self):
+        return "analysed: " + str(self.card)
+        
 class deck_of_cards:
 
     # clubs
@@ -83,7 +94,7 @@ class deck_of_cards:
     EIGHT_OF_CLUBS = cardinfo(cardshape.CLUB, cardvalue.EIGHT)
     NINE_OF_CLUBS = cardinfo(cardshape.CLUB, cardvalue.NINE)
     TEN_OF_CLUBS = cardinfo(cardshape.CLUB, cardvalue.TEN)
-    JOKER_OF_CLUBS = cardinfo(cardshape.CLUB, cardvalue.J)
+    JACK_OF_CLUBS = cardinfo(cardshape.CLUB, cardvalue.J)
     QUEEN_OF_CLUBS = cardinfo(cardshape.CLUB, cardvalue.Q)
     KING_OF_CLUBS = cardinfo(cardshape.CLUB, cardvalue.K)
     ACE_OF_CLUBS = cardinfo(cardshape.CLUB, cardvalue.A)
@@ -98,7 +109,7 @@ class deck_of_cards:
     EIGHT_OF_DIAMONDS = cardinfo(cardshape.DIAMOND, cardvalue.EIGHT)
     NINE_OF_DIAMONDS = cardinfo(cardshape.DIAMOND, cardvalue.NINE)
     TEN_OF_DIAMONDS = cardinfo(cardshape.DIAMOND, cardvalue.TEN)
-    JOKER_OF_DIAMONDS = cardinfo(cardshape.DIAMOND, cardvalue.J)
+    JACK_OF_DIAMONDS = cardinfo(cardshape.DIAMOND, cardvalue.J)
     QUEEN_OF_DIAMONDS = cardinfo(cardshape.DIAMOND, cardvalue.Q)
     KING_OF_DIAMONDS = cardinfo(cardshape.DIAMOND, cardvalue.K)
     ACE_OF_DIAMONDS = cardinfo(cardshape.DIAMOND, cardvalue.A)
@@ -113,7 +124,7 @@ class deck_of_cards:
     EIGHT_OF_HEARTS = cardinfo(cardshape.HEART, cardvalue.EIGHT)
     NINE_OF_HEARTS = cardinfo(cardshape.HEART, cardvalue.NINE)
     TEN_OF_HEARTS = cardinfo(cardshape.HEART, cardvalue.TEN)
-    JOKER_OF_HEARTS = cardinfo(cardshape.HEART, cardvalue.J)
+    JACK_OF_HEARTS = cardinfo(cardshape.HEART, cardvalue.J)
     QUEEN_OF_HEARTS = cardinfo(cardshape.HEART, cardvalue.Q)
     KING_OF_HEARTS = cardinfo(cardshape.HEART, cardvalue.K)
     ACE_OF_HEARTS = cardinfo(cardshape.HEART, cardvalue.A)
@@ -128,7 +139,7 @@ class deck_of_cards:
     EIGHT_OF_SPADES = cardinfo(cardshape.SPADE, cardvalue.EIGHT)
     NINE_OF_SPADES = cardinfo(cardshape.SPADE, cardvalue.NINE)
     TEN_OF_SPADES = cardinfo(cardshape.SPADE, cardvalue.TEN)
-    JOKER_OF_SPADES = cardinfo(cardshape.SPADE, cardvalue.J)
+    JACK_OF_SPADES = cardinfo(cardshape.SPADE, cardvalue.J)
     QUEEN_OF_SPADES = cardinfo(cardshape.SPADE, cardvalue.Q)
     KING_OF_SPADES = cardinfo(cardshape.SPADE, cardvalue.K)
     ACE_OF_SPADES = cardinfo(cardshape.SPADE, cardvalue.A)
