@@ -29,7 +29,7 @@ def calculate_normalized_distance(point1, point2, image_width, image_height):
     return normalized_distance
 
 def find_if_close(image, cnt1, cnt2):
-    threshold = 0.25
+    threshold = 0.2
     image_height, image_width, _ = image.shape
     object_centers = []
     for contour in [cnt1, cnt2]:

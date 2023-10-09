@@ -3,6 +3,7 @@ class cardshape:
     DIAMOND = 1
     HEART = 2
     SPADE = 3
+    UNKNOWN = 4
 
 class cardvalue:
     TWO = 0
@@ -18,6 +19,7 @@ class cardvalue:
     Q = 10
     K = 11
     A = 12
+    UNKNOWN = 13
     
 class cardinfo:
     def __init__(self, shape, value):
@@ -25,10 +27,19 @@ class cardinfo:
         self.value = value
 
     def __str__(self):
+        if self.shape == cardshape.UNKNOWN and self.value == cardvalue.UNKNOWN:
+            return "Unknown"
+        
         return f"{cardinfo.get_text_from_rank_id(self.value)} of {cardinfo.get_text_from_shape_id(self.shape)}s"
 
     def __repr__(self) -> str:
+        if self.shape == cardshape.UNKNOWN and self.value == cardvalue.UNKNOWN:
+            return "Unknown"
+        
         return f"{cardinfo.get_text_from_rank_id(self.value)} of {cardinfo.get_text_from_shape_id(self.shape)}s"
+
+    def is_unknown(self):
+        return self.shape == cardshape.UNKNOWN and self.value == cardvalue.UNKNOWN
 
     def get_text_from_rank_id(id):
         match id:
@@ -58,6 +69,8 @@ class cardinfo:
                 return "Queen"
             case cardvalue.K:
                 return "King"
+            case cardvalue.UNKNOWN:
+                return "UNKNOWN"
             case _:
                 raise "invalid id!"
 
@@ -71,6 +84,8 @@ class cardinfo:
                 return "Heart"
             case cardshape.SPADE:
                 return "Spade"
+            case cardshape.UNKNOWN:
+                return "UNKNOWN"
             case _:
                 raise "invalid id!"
 

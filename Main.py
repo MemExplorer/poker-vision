@@ -3,6 +3,7 @@ import poker_image_processor as ip
 import cv2utils
 from poker_ocr_engine import poker_ocr
 from poker_card import cardinfo, analysed_poker_card
+import numpy as np
 
 import hand_ranking_identifier as hid
 detector_list = [
@@ -32,7 +33,7 @@ def get_dealer_cards(grouped_cards):
         if len(g) == 5:
             return (g, False)
         
-    (None, None)
+    return (None, None)
         
 def get_player_cards(grouped_cards):
     valid_list = []
@@ -42,10 +43,24 @@ def get_player_cards(grouped_cards):
 
     return valid_list
 
+def bincount_app(a):
+    test_x = a.shape[0] // 2
+    test_y = a.shape[1] // 2
+    pix = a[test_y, test_x].tolist()
+    pix.reverse()
+    return pix
+    
+
 def analyse_card(ocr_engine, image, card_contour):
     fl = ip.flatten_perspective_transform(card_contour, image)
-    rank_img, val_img = ip.get_corner_info_image(fl)
+    dominant_color = bincount_app(fl)
     pts = ip.get_contour_points(card_contour)
+
+    # detect the back color of the card
+    if (dominant_color[0] >= 130 and dominant_color[0] <= 160) and (dominant_color[1] >= 80 and dominant_color[1] <= 120) and (dominant_color[2] >= 100 and dominant_color[2] <= 140):
+        return analysed_poker_card(pts, cardinfo(4, 13)) #return unknown card
+
+    rank_img, val_img = ip.get_corner_info_image(cv2.cvtColor(fl, cv2.COLOR_BGR2GRAY))
     shape = ocr_engine.scan_shape(val_img)
     rank = ocr_engine.scan_rank(rank_img)
     card = cardinfo(shape, rank)
@@ -72,15 +87,15 @@ def detect_cards_from_image(ocr, image):
         player_img_cards = []
     
     analysed_dealer_cards =  [analyse_card(ocr, image, c) for c in dealer_img_cards]
-    dealer_cards = [c.card for c in analysed_dealer_cards]
+    dealer_cards = [c.card for c in analysed_dealer_cards if not(c.card.is_unknown())]
     cv2utils.highlight_card_list(image, analysed_dealer_cards)
     cv2utils.highlight_grouped_cards(image, dealer_img_cards, "Dealer")
 
     for p in range(len(player_img_cards)):
         analysed_player_cards = [analyse_card(ocr, image, c) for c in player_img_cards[p]]
-        player_cards = [c.card for c in analysed_player_cards]
+        player_cards = [c.card for c in analysed_player_cards if not(c.card.is_unknown())]
         cv2utils.highlight_card_list(image, analysed_player_cards)
-        ranking = detect_hand_ranking(dealer_cards, player_cards)
+        ranking = "Unknown" if len(player_cards) < 2 else detect_hand_ranking(dealer_cards, player_cards)
         cv2utils.highlight_grouped_cards(image, player_img_cards[p], f"Player {p + 1} ({ranking})")
 
 def main():
@@ -88,7 +103,7 @@ def main():
     ocr.initialize()
     # img_path = "test_data/royalflush_ace/IMG20231006142219.jpg"
     # img_path = "test_data/tilted/IMG20231007175210.jpg"
-    img_path = "test_data/tilted/IMG20231007175210.jpg"
+    img_path = "test_data/unique cards/IMG20231009212515.jpg"
     image = cv2.imread(img_path)
     image = cv2.resize(image, (1920, 1080))
     detect_cards_from_image(ocr, image)

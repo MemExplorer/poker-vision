@@ -71,7 +71,6 @@ def flattener(image, pts, w, h):
     dst = np.array([[0,0],[maxWidth-1,0],[maxWidth-1,maxHeight-1],[0, maxHeight-1]], np.float32)
     M = cv2.getPerspectiveTransform(temp_rect,dst)
     warp = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
-    warp = cv2.cvtColor(warp,cv2.COLOR_BGR2GRAY)
     return warp
 
 def process_card_image(image):
@@ -175,8 +174,8 @@ def get_corner_info_image(flattened_img):
     if (thresh_level <= 0):
         thresh_level = 1
 
-    blur = cv2.GaussianBlur(resized_card_info_img,(5,5),0)
-    rank_threshed = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 11, 5)
+    blur = cv2.GaussianBlur(resized_card_info_img,(3,3),0)
+    rank_threshed = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 27, 5)
     val_threshed = cv2.threshold(resized_card_info_img, thresh_level, 255, cv2.THRESH_BINARY_INV)[1]
     
     #split card symbol and value
