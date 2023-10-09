@@ -42,21 +42,20 @@ def get_player_cards(grouped_cards):
 
     return valid_list
 
-def bincount_app(a):
-    test_x = a.shape[0] // 2
-    test_y = a.shape[1] // 2
-    pix = a[test_y, test_x].tolist()
+def find_dominant_color(a):
+    #resize image to 1x1 to get dominant color
+    data = cv2.resize(a, (1, 1)).reshape(-1, 3)
+    pix = data[0].tolist()
     pix.reverse()
     return pix
-    
 
 def analyse_card(ocr_engine, image, card_contour):
     fl = ip.flatten_perspective_transform(card_contour, image)
-    dominant_color = bincount_app(fl)
+    dominant_color = find_dominant_color(fl)
     pts = ip.get_contour_points(card_contour)
 
     # detect the back color of the card
-    if (dominant_color[0] >= 130 and dominant_color[0] <= 160) and (dominant_color[1] >= 80 and dominant_color[1] <= 120) and (dominant_color[2] >= 100 and dominant_color[2] <= 140):
+    if (dominant_color[0] >= 130 and dominant_color[0] <= 170) and (dominant_color[1] >= 80 and dominant_color[1] <= 130) and (dominant_color[2] >= 100 and dominant_color[2] <= 150):
         return analysed_poker_card(pts, cardinfo(4, 13)) #return unknown card
 
     rank_img, val_img = ip.get_corner_info_image(cv2.cvtColor(fl, cv2.COLOR_BGR2GRAY))
@@ -124,7 +123,7 @@ def main():
     #image = cv2.resize(image, (1920, 1080))
 
     
-    #edit_video(ocr, "VID20231009224507.mp4")
+    edit_video(ocr, "VID20231009234753.mp4")
 
 
     #detect_cards_from_image(ocr, image)
