@@ -43,7 +43,7 @@ class detector_base:
     
 class detect_royal_flush(detector_base):
     def __init__(self):
-        super().__init__("Royal Flush")
+        super().__init__("Royal flush")
         
     def detect(self, cardinfo_z):
         royalFlush = [cardvalue.A, cardvalue.K, cardvalue.Q, cardvalue.J, cardvalue.TEN]
@@ -139,4 +139,57 @@ class detect_pair(detector_base):
         # check if all the group result has more than one pair (2 pairs)
         two_item_group_result = sum([len(set(t1)) == 1 for t1 in two_item_group]) >= 1 #one pair
         return two_item_group_result 
+
+class detect_straight(detector_base):
+    def __init__(self):
+        super().__init__("Straight")
+
+    def detect(self, cardinfo_z):
+        # sort cards first
+        sorted_cards = sorted(cardinfo_z, key= lambda x: x.value)
+
+        result_list = []
+        tmp_list = []
+        for i in range(len(sorted_cards)):
+            tmp_list.append(sorted_cards[i])
+
+            # reset counter if current card + 1 does not match expected card
+            if i + 1 < len(sorted_cards) and sorted_cards[i].value + 1 == sorted_cards[i + 1].value:
+                continue
+            
+            # append to result if next card is not the expected card
+            result_list.append(tmp_list)
+            tmp_list = []
+        
+        # check how many cards have 5 or more consecutive numbers
+        count_result = sum(len(r) >= 5 for r in result_list)
+        return count_result == 1
     
+class detect_straight_flush(detector_base):
+    def __init__(self):
+        super().__init__("Straight flush")
+
+    def detect(self, cardinfo_z):
+        # sort cards first
+        sorted_cards = sorted(cardinfo_z, key= lambda x: x.value)
+
+        result_list = []
+        tmp_list = []
+        for i in range(len(sorted_cards)):
+            tmp_list.append(sorted_cards[i])
+
+            # reset counter if current card + 1 does not match expected card
+            if i + 1 < len(sorted_cards) and sorted_cards[i].value + 1 == sorted_cards[i + 1].value:
+                continue
+            
+            # append to result if next card is not the expected card
+            result_list.append(tmp_list)
+            tmp_list = []
+        
+        # check how many cards have 5 or more consecutive numbers
+        five_cons_group = [r for r in result_list if len(r) >= 5]
+        if len(five_cons_group) > 0:
+            shape_list = [sh.shape for sh in five_cons_group[0]] # it is impossible to have more than 1 five 5 group
+            return len(set(shape_list)) == 1 
+
+        return False

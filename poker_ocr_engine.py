@@ -77,50 +77,6 @@ class poker_ocr():
             raise "initialize first!"
         lowest_score_item = min(self.__shape_comparer_list, key= lambda c: c.get_score(input_img))
         return lowest_score_item.id
-    
-    def get_text_from_rank_id(self, id):
-        match id:
-            case cardvalue.TWO:
-                return "2"
-            case cardvalue.THREE:
-                return "3"
-            case cardvalue.FOUR:
-                return "4"
-            case cardvalue.FIVE:
-                return "5"
-            case cardvalue.SIX:
-                return "6"
-            case cardvalue.SEVEN:
-                return "7"
-            case cardvalue.EIGHT:
-                return "8"
-            case cardvalue.NINE:
-                return "9"
-            case cardvalue.TEN:
-                return "10"
-            case cardvalue.A:
-                return "A"
-            case cardvalue.J:
-                return "J"
-            case cardvalue.Q:
-                return "Q"
-            case cardvalue.K:
-                return "K"
-            case _:
-                raise "invalid id!"
-
-    def get_text_from_shape_id(self, id):
-        match id:
-            case cardshape.CLUB:
-                return "Club"
-            case cardshape.DIAMOND:
-                return "Diamond"
-            case cardshape.HEART:
-                return "Heart"
-            case cardshape.SPADE:
-                return "Spade"
-            case _:
-                raise "invalid id!"
 
     def __create_image_comparer(self, file, id):
         loaded_image = cv2.imread(file, 0)
