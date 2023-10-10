@@ -6,11 +6,11 @@ def cluster_cards_by_shape(card_list, find_len = 5):
     shape_dict = {}
     for c in card_list:
         # initialize list if shape is not in dict yet
-        if card_list.shape not in shape_dict:
-            shape_dict[card_list.shape] = []
+        if c.shape not in shape_dict:
+            shape_dict[c.shape] = []
 
         # add current value to shape group
-        shape_dict[card_list.shape].append(c)
+        shape_dict[c.shape].append(c)
 
     # look for group that has `find_len` cards in a shape
     tmp_list = [shape_dict[g] for g in shape_dict if len(shape_dict[g]) == find_len]
@@ -23,16 +23,22 @@ def cluster_cards_by_value(card_list, find_len = 4):
     value_dict = {}
     for c in card_list:
         # initialize list if value is not in dict yet
-        if card_list.value not in value_dict:
-            value_dict[card_list.value] = []
+        if c.value not in value_dict:
+            value_dict[c.value] = []
 
         # add current value to value group
-        value_dict[card_list.value].append(c)
+        value_dict[c.value].append(c)
 
     # look for group that has `find_len` cards in a value
     tmp_list = [value_dict[g] for g in value_dict if len(value_dict[g]) == find_len]
     if len(tmp_list) > 0:
         return tmp_list
+
+def get_shapes_only(card_list):
+    return [c.shape for c in card_list]
+
+def get_values_only(card_list):
+    return [c.value for c in card_list]
 
 class detector_base:
     def __init__(self, pattern_name):
@@ -43,7 +49,7 @@ class detector_base:
     
 class detect_royal_flush(detector_base):
     def __init__(self):
-        super().__init__("Royal Flush")
+        super().__init__("Royal flush")
         
     def detect(self, cardinfo_z):
         royalFlush = [cardvalue.A, cardvalue.K, cardvalue.Q, cardvalue.J, cardvalue.TEN]
@@ -58,27 +64,29 @@ class detect_flush(detector_base):
         super().__init__("Flush")
 
     def detect(self, cardinfo_z):
-        if len(cardinfo_z) > 5:
-            cardinfo_z = cluster_cards_by_shape(cardinfo_z)
+        clustered_cards = cluster_cards_by_shape(cardinfo_z)
 
         # check if it's none
-        if cardinfo_z == None:
+        if clustered_cards == None:
             return False
 
-        return len(set(cardinfo_z[0])) == 1
+        result_list = [i for i in clustered_cards if len(i) == 5]
+        return len(result_list) == 1 and len(set(get_shapes_only(result_list[0]))) == 1
     
 class detect_four_of_a_kind(detector_base):
     def __init__(self):
         super().__init__("Four of a kind")
 
     def detect(self, cardinfo_z):
-        clustered_values = cluster_cards_by_value(cardinfo_z, 4)
+        sorted_cards = sorted(cardinfo_z, key=lambda x: x.value)
+        clustered_values = cluster_cards_by_value(sorted_cards, 4)
 
         # check if it's none
         if clustered_values == None:
             return False
 
-        return len(set(clustered_values[0])) == 1
+        value_list = get_values_only(clustered_values[0])
+        return len(set(value_list)) == 1
     
 class detect_three_of_a_kind(detector_base):
     def __init__(self):
@@ -91,7 +99,7 @@ class detect_three_of_a_kind(detector_base):
             return False
         
         # check if all the group result has 3 same card values
-        three_item_group_result = sum([len(set(t1)) == 1 for t1 in three_item_group]) >= 1
+        three_item_group_result = sum([len(set(get_values_only(t1))) == 1 for t1 in three_item_group]) >= 1
         return three_item_group_result
 
 class detect_full_house(detector_base):
@@ -106,11 +114,13 @@ class detect_full_house(detector_base):
         if two_item_group == None or three_item_group == None:
             return False
 
+        three_item_group_values = get_values_only(three_item_group[0])
+
         # check if all the two item group result has at least one pair
-        two_item_group_result = sum([len(set(t1)) == 1 for t1 in two_item_group]) > 0
+        two_item_group_result = sum([len(set(get_values_only(t1))) == 1 for t1 in two_item_group]) > 0
         
         # check if both group has same card values
-        return two_item_group_result and len(set(three_item_group[0])) == 1 
+        return two_item_group_result and len(set(three_item_group_values)) == 1 
     
 class detect_two_pair(detector_base):
     def __init__(self):
@@ -123,7 +133,7 @@ class detect_two_pair(detector_base):
             return False
         
         # check if all the group result has more than one pair (2 pairs)
-        two_item_group_result = sum([len(set(t1)) == 1 for t1 in two_item_group]) >= 2 #two pair
+        two_item_group_result = sum([len(set(get_values_only(t1))) == 1 for t1 in two_item_group]) >= 2 #two pair
         return two_item_group_result 
 
 class detect_pair(detector_base):
@@ -137,6 +147,59 @@ class detect_pair(detector_base):
             return False
         
         # check if all the group result has more than one pair (2 pairs)
-        two_item_group_result = sum([len(set(t1)) == 1 for t1 in two_item_group]) >= 1 #one pair
+        two_item_group_result = sum([len(set(get_values_only(t1))) == 1 for t1 in two_item_group]) >= 1 #one pair
         return two_item_group_result 
+
+class detect_straight(detector_base):
+    def __init__(self):
+        super().__init__("Straight")
+
+    def detect(self, cardinfo_z):
+        # sort cards first
+        sorted_cards = sorted(cardinfo_z, key= lambda x: x.value)
+
+        result_list = []
+        tmp_list = []
+        for i in range(len(sorted_cards)):
+            tmp_list.append(sorted_cards[i])
+
+            # reset counter if current card + 1 does not match expected card
+            if i + 1 < len(sorted_cards) and sorted_cards[i].value + 1 == sorted_cards[i + 1].value:
+                continue
+            
+            # append to result if next card is not the expected card
+            result_list.append(tmp_list)
+            tmp_list = []
+        
+        # check how many cards have 5 or more consecutive numbers
+        count_result = sum(len(r) >= 5 for r in result_list)
+        return count_result == 1
     
+class detect_straight_flush(detector_base):
+    def __init__(self):
+        super().__init__("Straight flush")
+
+    def detect(self, cardinfo_z):
+        # sort cards first
+        sorted_cards = sorted(cardinfo_z, key= lambda x: x.value)
+
+        result_list = []
+        tmp_list = []
+        for i in range(len(sorted_cards)):
+            tmp_list.append(sorted_cards[i])
+
+            # reset counter if current card + 1 does not match expected card
+            if i + 1 < len(sorted_cards) and sorted_cards[i].value + 1 == sorted_cards[i + 1].value:
+                continue
+            
+            # append to result if next card is not the expected card
+            result_list.append(tmp_list)
+            tmp_list = []
+        
+        # check how many cards have 5 or more consecutive numbers
+        five_cons_group = [r for r in result_list if len(r) >= 5]
+        if len(five_cons_group) > 0:
+            shape_list = [sh.shape for sh in five_cons_group[0]] # it is impossible to have more than 1 five 5 group
+            return len(set(shape_list)) == 1 
+
+        return False

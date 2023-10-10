@@ -1,9 +1,10 @@
 import cv2
 import numpy as np
+from functools import cmp_to_key
 
 #constants
 CARD_MAX_AREA = 10000000
-CARD_MIN_AREA = 25000
+CARD_MIN_AREA = 15000 #5000 if 1280x720
 
 def flattener(image, pts, w, h):
     """Flattens an image of a card into a top-down 200x300 perspective.
@@ -70,7 +71,6 @@ def flattener(image, pts, w, h):
     dst = np.array([[0,0],[maxWidth-1,0],[maxWidth-1,maxHeight-1],[0, maxHeight-1]], np.float32)
     M = cv2.getPerspectiveTransform(temp_rect,dst)
     warp = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
-    warp = cv2.cvtColor(warp,cv2.COLOR_BGR2GRAY)
     return warp
 
 def process_card_image(image):
@@ -82,9 +82,21 @@ def process_card_image(image):
 
     return thresh
 
+def contour_sort(a, b):
+
+    br_a = cv2.boundingRect(a)
+    br_b = cv2.boundingRect(b)
+
+    if abs(br_a[1] - br_b[1]) <= 15:
+        return br_a[0] - br_b[0]
+
+    return br_a[1] - br_b[1]
+
+
 def get_card_contours(thresh):
     cnts, hier = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
+    
+    half = cv2.boundingRect(thresh)[2] * 0.6
     valid_conts = []
     for i in range(len(cnts)):
         size = cv2.contourArea(cnts[i])
@@ -92,7 +104,7 @@ def get_card_contours(thresh):
         approx = cv2.approxPolyDP(cnts[i],0.01*peri,True)
         
         if ((size < CARD_MAX_AREA) and (size > CARD_MIN_AREA)
-            and (len(approx) == 4)):
+            and (len(approx) == 4) and  cv2.boundingRect(cnts[i])[2] < half):
             valid_conts.append(cnts[i])
 
     #sort the detected cards by their area in descending order
@@ -112,7 +124,8 @@ def get_card_contours(thresh):
         if not is_inside:
             valid_conts2.append(card)
 
-    return valid_conts2
+    # sort cards from top, left to right, then botton, left to right
+    return sorted(valid_conts2, key=cmp_to_key(contour_sort))
 
 def get_contour_points(contour):
     #find perimeter of card and use it to approximate corner points
@@ -153,7 +166,7 @@ def get_corner_info_image(flattened_img):
 
     #update values to calculate card info image size
     x,y,w,h = cv2.boundingRect(resized_card_info_img)
-    cent_y = int(h * 0.6)
+    cent_y = int(h * 0.5)
 
     #get thresh level
     white_level = resized_card_info_img[15,int((c_width*4)/2)]
@@ -161,10 +174,16 @@ def get_corner_info_image(flattened_img):
     if (thresh_level <= 0):
         thresh_level = 1
 
-    threshed = cv2.threshold(resized_card_info_img, thresh_level, 255, cv2.THRESH_BINARY_INV)[1]
-
+    blur = cv2.GaussianBlur(resized_card_info_img,(3,3),0)
+    rank_threshed = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 27, 5)
+    val_threshed = cv2.threshold(resized_card_info_img, thresh_level, 255, cv2.THRESH_BINARY_INV)[1]
+    
     #split card symbol and value
-    card_rank_img = remove_spaces(threshed[20:cent_y, 0:w])
-    card_val_img = remove_spaces(threshed[cent_y:cent_y + (h - cent_y), 0:w])
+    card_rank_img = remove_spaces(rank_threshed[10:cent_y + 10, 0:w])
+    card_val_img = remove_spaces(val_threshed[cent_y:cent_y + (h - cent_y), 0:w])
+
+    # small hack to fix detection issues
+    if card_val_img is None:
+        card_val_img = remove_spaces(rank_threshed[cent_y:cent_y + (h - cent_y), 0:w])
 
     return (card_rank_img, card_val_img)
