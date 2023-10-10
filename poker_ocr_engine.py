@@ -44,7 +44,7 @@ class poker_ocr():
         img_shape_list = [f for f in listdir(self.__sample_path) if len(f) == 6 and f[0] == "S" and f.endswith("jpg") and isfile(join(self.__sample_path, f))]
 
         if len(img_rank_list) != 13:
-            raise "Image rank list must be exactly 12!"
+            raise "Image rank list must be exactly 13!"
         
         if len(img_shape_list) != 4:
             raise "Image shape list must be exactly 4!"
