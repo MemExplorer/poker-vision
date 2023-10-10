@@ -166,6 +166,11 @@ def get_corner_info_image(flattened_img):
     y_percent = 0.26
     x_percent = 0.15
     c_width = int(w * x_percent)
+
+    # handle image transition error
+    if c_width == 0:
+        return (None, None)
+    
     cropped_info = flattened_img[y:y+int(h * y_percent), x:x+c_width]
     resized_card_info_img = cv2.resize(cropped_info, (0,0), fx=4, fy=4)
 

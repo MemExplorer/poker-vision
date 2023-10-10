@@ -114,13 +114,48 @@ def detect_cards_from_image(ocr, image):
         ranking = "Unknown" if len(player_cards) < 2 else detect_hand_ranking(dealer_cards, player_cards)
         cv2utils.highlight_grouped_cards(image, player_img_cards[p], f"Player {p + 1} ({ranking})")
 
+def get_available_camera_devices():
+    index = 0
+    cam_list = []
+    while True:
+        cap = cv2.VideoCapture(index)
+        if not cap.read()[0]:
+            break
+        else:
+            cam_list.append(index)
+        cap.release()
+        index += 1
+    return cam_list
+
+
 def test_cam(ocr):
-    cap = cv2utils.ThreadedCamera(0)
+
+    # get available camera devices
+    cam_devices = get_available_camera_devices()
+    if len(cam_devices) == 0:
+        print("You have no available camera device!")
+        return
+    
+    # select available camera devices
+    print("Available devices: ")
+    for i in range(len(cam_devices)):
+        print(str(i + 1) + ": " + str(cam_devices[i]))
+
+    sel_index = 0
+    while(True):
+        cam_index = input("Select Camera: ")
+        if cam_index.isnumeric() and (int(cam_index) > 0 and int(cam_index) <= len(cam_devices)):
+            sel_index = int(cam_index)
+            break
+
+    # initialize camera device
+    cap = cv2utils.ThreadedCamera(cam_devices[sel_index - 1])
 
     while True:
         frame = cap.grab_frame()
         if frame is None:
             continue
+        
         # highlight cards
         detect_cards_from_image(ocr, frame)
         cv2.imshow('frame', frame)
@@ -130,13 +165,13 @@ def test_cam(ocr):
 def edit_video(ocr, vid_path):
     source = cv2.VideoCapture(vid_path)  
     source.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    source.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)                                                                                                                        
+    source.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)          
+
     # iterate through all the frames if the video clip present
     while(source.isOpened()):                                                                                                                                                 
         #read the frame
         ret, frame = source.read()
 
-        # 
         detect_cards_from_image(ocr, frame)                                                                                                                                                    
         cv2.imshow('frame', frame)
 
@@ -157,9 +192,9 @@ def test_image(ocr):
 def main():
     ocr = poker_ocr("test_data/training")
     ocr.initialize()
+    test_cam(ocr)
     #test_image(ocr)
     #edit_video(ocr, "VID20231009234753.mp4")
-    test_cam(ocr)
 
 
 if __name__ == "__main__":
