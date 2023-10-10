@@ -64,6 +64,9 @@ def analyse_card(ocr_engine, image, card_contour):
 
     # get corner info
     rank_img, val_img = ip.get_corner_info_image(cv2.cvtColor(fl, cv2.COLOR_BGR2GRAY))
+    if rank_img is None or val_img is None:
+        return
+    
     shape = ocr_engine.scan_shape(val_img)
     rank = ocr_engine.scan_rank(rank_img)
 
@@ -96,6 +99,9 @@ def detect_cards_from_image(ocr, image):
     
     # analyse and process dealer card images
     analysed_dealer_cards =  [analyse_card(ocr, image, c) for c in dealer_img_cards]
+    if analysed_dealer_cards.count(None) > 0:
+        return
+
     dealer_cards = [c.card for c in analysed_dealer_cards if not(c.card.is_unknown())]
     cv2utils.highlight_card_list(image, analysed_dealer_cards)
     cv2utils.highlight_grouped_cards(image, dealer_img_cards, "Dealer")
@@ -108,6 +114,19 @@ def detect_cards_from_image(ocr, image):
         ranking = "Unknown" if len(player_cards) < 2 else detect_hand_ranking(dealer_cards, player_cards)
         cv2utils.highlight_grouped_cards(image, player_img_cards[p], f"Player {p + 1} ({ranking})")
 
+def test_cam(ocr):
+    cap = cv2utils.ThreadedCamera(0)
+
+    while True:
+        frame = cap.grab_frame()
+        if frame is None:
+            continue
+        # highlight cards
+        detect_cards_from_image(ocr, frame)
+        cv2.imshow('frame', frame)
+        if cv2.waitKey(144) & 0xFF == ord('q'):
+            break
+
 def edit_video(ocr, vid_path):
     source = cv2.VideoCapture(vid_path)  
     source.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
@@ -116,9 +135,9 @@ def edit_video(ocr, vid_path):
     while(source.isOpened()):                                                                                                                                                 
         #read the frame
         ret, frame = source.read()
+
+        # 
         detect_cards_from_image(ocr, frame)                                                                                                                                                    
-        #check for flag
-    
         cv2.imshow('frame', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -139,7 +158,8 @@ def main():
     ocr = poker_ocr("test_data/training")
     ocr.initialize()
     #test_image(ocr)
-    edit_video(ocr, "VID20231009234753.mp4")
+    #edit_video(ocr, "VID20231009234753.mp4")
+    test_cam(ocr)
 
 
 if __name__ == "__main__":
