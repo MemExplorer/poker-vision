@@ -1,11 +1,13 @@
 import cv2
 import numpy as np
 
+# show image in a popup window
 def show_image(image):
     cv2.namedWindow("image", cv2.WINDOW_AUTOSIZE)
     cv2.imshow("image", image)
     cv2.waitKey(0)
 
+# highlight object in an image
 def draw_image(image, points):
     color = (36, 255, 12)
 
@@ -19,6 +21,7 @@ def draw_image(image, points):
     cv2.line(image, pt3, pt4, color, 3)
     cv2.line(image, pt4, pt1, color, 3)
 
+# technique to check distance between two objects in an image regardless of image size
 def calculate_normalized_distance(point1, point2, image_width, image_height):
     # Calculate the Euclidean distance between two points
     distance = np.linalg.norm(np.array(point1) - np.array(point2))
@@ -28,6 +31,7 @@ def calculate_normalized_distance(point1, point2, image_width, image_height):
 
     return normalized_distance
 
+# function for check if two objects in an image are close to one another or not
 def find_if_close(image, cnt1, cnt2):
     threshold = 0.2
     image_height, image_width, _ = image.shape
@@ -42,6 +46,7 @@ def find_if_close(image, cnt1, cnt2):
     normalized_distance = calculate_normalized_distance(object_centers[0], object_centers[1], image_width, image_height)
     return normalized_distance < threshold
 
+# sets name of the detected card
 def set_image_text(image, name, pts):
     average = np.sum(pts, axis=0)/len(pts)
     text_x = int(average[0][0])
@@ -59,6 +64,7 @@ def set_image_text(image, name, pts):
     # Put the text on the image
     cv2.putText(image, text, (text_x - to_sub_len, text_y + yadd), font, font_scale, font_color, font_thickness)
 
+# sets name of the detected group
 def set_group_text(image, name, x, y):
     text_x = int(x)
     text_y = int(y)
@@ -71,6 +77,7 @@ def set_group_text(image, name, x, y):
     # Put the text on the image
     cv2.putText(image, text, (text_x, text_y - 10), font, font_scale, font_color, font_thickness)
 
+# highlights the group of cards
 def highlight_grouped_cards(image, card_group, text):
     x,y,w,h = union(card_group[0], card_group[-1])
     wdiff = int(w * 0.05)
@@ -82,11 +89,13 @@ def highlight_grouped_cards(image, card_group, text):
     cv2.rectangle(image, (x, y), (x + w, y + h),(0,0,255), 3)
     set_group_text(image, text, x, y)
 
+# highlights all the cards in a list
 def highlight_card_list(image, card_list):
     for b in card_list:
         draw_image(image, b.points)
         set_image_text(image, str(b.card), b.points)
 
+# clusters near cards
 def group_near_cards(image, card_list):
     ret = []
     curr_list = []
@@ -100,6 +109,7 @@ def group_near_cards(image, card_list):
             
     return ret
 
+# union two contours
 def union(a1,b1):
     a = cv2.boundingRect(a1)
     b = cv2.boundingRect(b1)
