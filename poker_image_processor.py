@@ -73,6 +73,7 @@ def flattener(image, pts, w, h):
     warp = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
     return warp
 
+# necessary transformations to get card contours easily
 def process_card_image(image):
     gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray,(5,5),0)
@@ -82,6 +83,7 @@ def process_card_image(image):
 
     return thresh
 
+# compare placement of 2 cards
 def contour_sort(a, b):
 
     br_a = cv2.boundingRect(a)
@@ -94,9 +96,12 @@ def contour_sort(a, b):
 
 
 def get_card_contours(thresh):
-    cnts, hier = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0]
     
+    # cards must be less than half of image width
     half = cv2.boundingRect(thresh)[2] * 0.6
+
+    # find valid card contours
     valid_conts = []
     for i in range(len(cnts)):
         size = cv2.contourArea(cnts[i])
@@ -110,8 +115,8 @@ def get_card_contours(thresh):
     #sort the detected cards by their area in descending order
     valid_conts.sort(key=lambda x: cv2.contourArea(x), reverse=True)
 
-    valid_conts2 = []
     #iterate through the sorted cards and exclude detection inside another detection
+    valid_conts2 = []
     for i, card in enumerate(valid_conts):
         is_inside = False
         for j, other_card in enumerate(valid_conts):
@@ -179,11 +184,11 @@ def get_corner_info_image(flattened_img):
     val_threshed = cv2.threshold(resized_card_info_img, thresh_level, 255, cv2.THRESH_BINARY_INV)[1]
     
     #split card symbol and value
-    card_rank_img = remove_spaces(rank_threshed[10:cent_y + 10, 0:w])
-    card_val_img = remove_spaces(val_threshed[cent_y:cent_y + (h - cent_y), 0:w])
+    card_value_img = remove_spaces(rank_threshed[10:cent_y + 10, 0:w])
+    card_shape_img = remove_spaces(val_threshed[cent_y:cent_y + (h - cent_y), 0:w])
 
     # small hack to fix detection issues
-    if card_val_img is None:
-        card_val_img = remove_spaces(rank_threshed[cent_y:cent_y + (h - cent_y), 0:w])
+    if card_shape_img is None:
+        card_shape_img = remove_spaces(rank_threshed[cent_y:cent_y + (h - cent_y), 0:w])
 
-    return (card_rank_img, card_val_img)
+    return (card_value_img, card_shape_img)
