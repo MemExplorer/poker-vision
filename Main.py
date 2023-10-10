@@ -113,22 +113,22 @@ def edit_video(ocr, vid_path):
             break                                                                                                                                  
     print("Done")
 
+def test_image(ocr):
+    # img_path = "test_data/royalflush_ace/IMG20231006142219.jpg"
+    # img_path = "test_data/tilted/IMG20231007175210.jpg"
+    img_path = "test_data/card_rankings/full_house2.jpg"
+    image = cv2.imread(img_path)
+    image = cv2.resize(image, (1920, 1080))
+    detect_cards_from_image(ocr, image)
+    cv2utils.show_image(image)
+    #cv2.imwrite("test.jpg", image)
+
 def main():
     ocr = poker_ocr("test_data/training")
     ocr.initialize()
-    # img_path = "test_data/royalflush_ace/IMG20231006142219.jpg"
-    # img_path = "test_data/tilted/IMG20231007175210.jpg"
-    #img_path = "test_data/unique cards/IMG20231009210620.jpg"
-    #image = cv2.imread(img_path)
-    #image = cv2.resize(image, (1920, 1080))
+    test_image(ocr)
+    #edit_video(ocr, "VID20231009234753.mp4")
 
-    
-    edit_video(ocr, "VID20231009234753.mp4")
-
-
-    #detect_cards_from_image(ocr, image)
-    #cv2utils.show_image(image)
-    #cv2.imwrite("test.jpg", image)
 
 if __name__ == "__main__":
     main()
