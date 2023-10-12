@@ -2,8 +2,11 @@ import cv2
 import poker_image_processor as ip
 import cv2utils
 from poker_ocr_engine import poker_ocr
-from poker_card import cardinfo, analysed_poker_card
+from poker_card import cardinfo, analysed_poker_card, deck_of_cards
 import hand_ranking_identifier as hid
+import numpy as np
+from os import listdir
+from os.path import isfile, join, isdir
 
 detector_list = [
     hid.detect_royal_flush(),
@@ -42,13 +45,14 @@ def get_player_cards(grouped_cards):
 
     return valid_list
 
+def unique_count_app(a):
+    colors, count = np.unique(a.reshape(-1,a.shape[-1]), axis=0, return_counts=True)
+    return colors[count.argmax()]
 def find_dominant_color(a):
-    #resize image to 1x1 to get dominant color
-    data = cv2.resize(a, (1, 1)).reshape(-1, 3)
-    pix = data[0].tolist()
-
-    # convert to rgb
-    pix.reverse() 
+    x, y, w, h = cv2.boundingRect(cv2.cvtColor(a,cv2.COLOR_BGR2GRAY))
+    crop_mid = a[x: x + (w//2),y: y + (h//2)]
+    pix = cv2.resize(crop_mid, (1,1))[0][0].tolist()
+    pix.reverse()
     return pix
 
 def analyse_card(ocr_engine, image, card_contour):
@@ -58,8 +62,9 @@ def analyse_card(ocr_engine, image, card_contour):
     dominant_color = find_dominant_color(fl)
     pts = ip.get_contour_points(card_contour)
 
+    #if (dominant_color[0] >= 165 and dominant_color[0] <= 210) and (dominant_color[1] >= 80 and dominant_color[1] <= 140) and (dominant_color[2] >= 100 and dominant_color[2] <= 150):
     # detect the back color of the card
-    if (dominant_color[0] >= 130 and dominant_color[0] <= 170) and (dominant_color[1] >= 80 and dominant_color[1] <= 130) and (dominant_color[2] >= 100 and dominant_color[2] <= 150):
+    if (dominant_color[0] >= 165 and dominant_color[0] <= 210) and (dominant_color[1] >= 80 and dominant_color[1] <= 130) and (dominant_color[2] >= 100 and dominant_color[2] <= 140):
         return analysed_poker_card(pts, cardinfo(4, 13)) #return unknown card
 
     # get corner info
@@ -89,6 +94,8 @@ def detect_cards_from_image(ocr, image):
     dealer_img_cards, is_one = get_dealer_cards(grouped_near_cards)
     player_img_cards = get_player_cards(grouped_near_cards)
 
+    print(f"Group: {len(grouped_near_cards)}")
+    print(f"Dealer: {len([] if dealer_img_cards is None else dealer_img_cards)}, Player: {len(player_img_cards)}")
     # check if we have a dealer
     if dealer_img_cards == None:
         return
@@ -109,6 +116,8 @@ def detect_cards_from_image(ocr, image):
     # analyse and process card images of each player
     for p in range(len(player_img_cards)):
         analysed_player_cards = [analyse_card(ocr, image, c) for c in player_img_cards[p]]
+        if any(i is None for i in analysed_player_cards):
+            continue
         player_cards = [c.card for c in analysed_player_cards if not(c.card.is_unknown())]
         cv2utils.highlight_card_list(image, analysed_player_cards)
         ranking = "Unknown" if len(player_cards) < 2 else detect_hand_ranking(dealer_cards, player_cards)
@@ -182,11 +191,13 @@ def edit_video(ocr, vid_path):
 def test_image(ocr):
     # img_path = "test_data/royalflush_ace/IMG20231006142219.jpg"
     # img_path = "test_data/tilted/IMG20231007175210.jpg"
-    img_path = "test_data/card_rankings/full_house2.jpg"
-    image = cv2.imread(img_path)
-    image = cv2.resize(image, (1920, 1080))
-    detect_cards_from_image(ocr, image)
-    cv2utils.show_image(image)
+    img_path = "test_data/card_rankings/"
+    files = [f for f in listdir(img_path) if f.endswith("jpg") and isfile(join(img_path, f))]
+    for f in files:
+        image = cv2.imread(img_path + f)
+        image = cv2.resize(image, (1920, 1080))
+        detect_cards_from_image(ocr, image)
+        cv2utils.show_image(image, f)
     #cv2.imwrite("test.jpg", image)
 
 def main():

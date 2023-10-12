@@ -28,9 +28,9 @@ class ThreadedCamera(object):
         return None  
 
 # show image in a popup window
-def show_image(image):
-    cv2.namedWindow("image", cv2.WINDOW_AUTOSIZE)
-    cv2.imshow("image", image)
+def show_image(image, title = "image"):
+    cv2.namedWindow(title, cv2.WINDOW_AUTOSIZE)
+    cv2.imshow(title, image)
     cv2.waitKey(0)
 
 # highlight object in an image

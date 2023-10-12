@@ -61,20 +61,17 @@ class detector_base:
 class detect_royal_flush(detector_base):
     # constants
     ROYAL_FLUSH_PATTERN = [cardvalue.A, cardvalue.K, cardvalue.Q, cardvalue.J, cardvalue.TEN]
-
     def __init__(self):
         super().__init__("Royal flush")
         
     def detect(self, cardinfo_z):
-        # only get card shapes if card value is in royal flush pattern
-        valid_value_cards_shape = [c.shape for c in cardinfo_z if c.value in detect_royal_flush.ROYAL_FLUSH_PATTERN]
-
-        # if card shapes count is less than 5, we return false
-        if len(valid_value_cards_shape) < 5:
+        # only get cards with same shape
+        shape_cluster = cluster_cards_by_shape(cardinfo_z)
+        if shape_cluster == None:
             return False
         
-        # check if all the collected shapes are all the same
-        return len(set(valid_value_cards_shape)) == 1
+        # only get card shapes if card value is in royal flush pattern
+        return sum(s.value in detect_royal_flush.ROYAL_FLUSH_PATTERN for s in shape_cluster[0]) >= 5
     
 class detect_flush(detector_base):
     def __init__(self):
@@ -150,8 +147,15 @@ class detect_straight(detector_base):
         super().__init__("Straight")
 
     def detect(self, cardinfo_z):
+        
+        # remove duplicate card values
+        set_list = []
+        for c in cardinfo_z:
+            if c.value not in set_list:
+                set_list.append(c)
+
         # sort cards first
-        sorted_cards = sorted(cardinfo_z, key= lambda x: x.value)
+        sorted_cards = sorted(set_list, key= lambda x: x.value)
 
         result_list = []
         tmp_list = []
@@ -175,8 +179,14 @@ class detect_straight_flush(detector_base):
         super().__init__("Straight flush")
 
     def detect(self, cardinfo_z):
-        # sort cards first
-        sorted_cards = sorted(cardinfo_z, key= lambda x: x.value)
+        # cluster shapes and must have 5 items only
+        cluster_shape = cluster_cards_by_shape(cardinfo_z)
+
+        if cluster_shape == None:
+            return False
+        
+        # sort cards
+        sorted_cards = sorted(cluster_shape[0], key= lambda x: x.value)
 
         result_list = []
         tmp_list = []
