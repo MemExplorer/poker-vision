@@ -201,7 +201,7 @@ def test_image(ocr):
     #cv2.imwrite("test.jpg", image)
 
 def main():
-    ocr = poker_ocr("test_data/training")
+    ocr = poker_ocr("training")
     ocr.initialize()
     test_cam(ocr)
     #test_image(ocr)

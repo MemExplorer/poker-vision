@@ -160,5 +160,4 @@ cython_debug/
 #.idea/
 
 test_data/
-training/
 .vs/
