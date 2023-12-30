@@ -3,7 +3,7 @@
 
 Poker Vision (YOLOv8 Branch) is a computer vision project that uses YOLOv8 Object Detection Model to identify the cards shown at a poker table. The project can be used to develop a poker bot that can play the game automatically, or to provide players with real-time information about their hand and the hands of their opponents.
 
-## Differences And Issues
+## Differences And Issues:
 The card identification in this branch is more consistent compared to the main branch. The only issue in this version is that it fails to detect cards with a rank of '10'.
 
 ## How it works:
