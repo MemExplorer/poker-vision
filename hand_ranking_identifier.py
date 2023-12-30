@@ -1,4 +1,4 @@
-from poker_card import cardvalue
+from poker_card import card_rank
 
 def cluster_cards_by_shape(card_list, find_len = 5, limit = True):
 
@@ -60,7 +60,7 @@ class detector_base:
     
 class detect_royal_flush(detector_base):
     # constants
-    ROYAL_FLUSH_PATTERN = [cardvalue.A, cardvalue.K, cardvalue.Q, cardvalue.J, cardvalue.TEN]
+    ROYAL_FLUSH_PATTERN = [card_rank.A, card_rank.K, card_rank.Q, card_rank.J, card_rank.TEN]
     def __init__(self):
         super().__init__("Royal flush")
         

@@ -1,12 +1,10 @@
 import cv2
 import poker_image_processor as ip
 import cv2utils
-from poker_ocr_engine import poker_ocr
-from poker_card import cardinfo, analysed_poker_card, deck_of_cards
+from poker_card import cardinfo, analysed_poker_card, card_suit_from_yolo, card_rank_from_yolo
 import hand_ranking_identifier as hid
 import numpy as np
-from os import listdir
-from os.path import isfile, join, isdir
+from ultralytics import YOLO
 
 detector_list = [
     hid.detect_royal_flush(),
@@ -45,51 +43,60 @@ def get_player_cards(grouped_cards):
 
     return valid_list
 
-def unique_count_app(a):
-    colors, count = np.unique(a.reshape(-1,a.shape[-1]), axis=0, return_counts=True)
-    return colors[count.argmax()]
-def find_dominant_color(a):
-    x, y, w, h = cv2.boundingRect(cv2.cvtColor(a,cv2.COLOR_BGR2GRAY))
-    crop_mid = a[x: x + (w//2),y: y + (h//2)]
-    pix = cv2.resize(crop_mid, (1,1))[0][0].tolist()
-    pix.reverse()
-    return pix
+def read_corner_info_pred(c, yolo_result):
+    yolo_labels = []
+    for b in yolo_result.boxes:
+        cont_label = yolo_result.names[int(b.cls)]
+        yolo_labels.append(cont_label)
+    if len(yolo_labels) > 2 or len(yolo_labels) < 2:
+        return (None, None)
+    
+    yolo_labels.sort(key=lambda x: len(x))
+    if len(yolo_labels[0]) != 1:
+        return (None, None)
+    return card_rank_from_yolo(yolo_labels[0]), card_suit_from_yolo(yolo_labels[1])
+
 
 def analyse_card(ocr_engine, image, card_contour):
 
     # flatten and change card perspective first
-    fl = ip.flatten_perspective_transform(card_contour, image)
-    dominant_color = find_dominant_color(fl)
-    pts = ip.get_contour_points(card_contour)
-
-    #if (dominant_color[0] >= 165 and dominant_color[0] <= 210) and (dominant_color[1] >= 80 and dominant_color[1] <= 140) and (dominant_color[2] >= 100 and dominant_color[2] <= 150):
-    # detect the back color of the card
-    if (dominant_color[0] >= 165 and dominant_color[0] <= 210) and (dominant_color[1] >= 80 and dominant_color[1] <= 130) and (dominant_color[2] >= 100 and dominant_color[2] <= 140):
-        return analysed_poker_card(pts, cardinfo(4, 13)) #return unknown card
+    fl = ip.flatten_perspective_transform(image, card_contour)
+    if(card_contour.label == "card back"):
+        return analysed_poker_card(card_contour.contour, cardinfo(4, 13)) #return unknown card
 
     # get corner info
-    rank_img, val_img = ip.get_corner_info_image(cv2.cvtColor(fl, cv2.COLOR_BGR2GRAY))
-    if rank_img is None or val_img is None:
+    img_corner = ip.get_corner_info_image(cv2.cvtColor(fl, cv2.COLOR_BGR2GRAY))
+    corner_info_pred = ocr_engine(cv2.cvtColor(img_corner, cv2.COLOR_GRAY2BGR), conf=0.5)
+    card_rank, card_suit = read_corner_info_pred(img_corner, corner_info_pred[0])
+    if card_rank is None:
         return
-    
-    shape = ocr_engine.scan_shape(val_img)
-    rank = ocr_engine.scan_rank(rank_img)
 
     # create analysed card info
-    card = cardinfo(shape, rank)
-    return analysed_poker_card(pts, card)
+    card = cardinfo(card_suit, card_rank)
+    return analysed_poker_card(card_contour.contour, card)
 
-def detect_cards_from_image(ocr, image):
+class yolo_contour:
+        def __init__(self, label, contour, w, h):
+            self.label = label
+            self.contour = contour
+            self.width = w
+            self.height = h
 
-    # do necessary transformation to image to extract card contours
-    thresh = ip.process_card_image(image)
-    conts = ip.get_card_contours(thresh)
+def get_contours_from_yolo(yolo_result):
+        yolo_conts = []
+        for b in yolo_result.boxes:
+            x1, y1, x2, y2 = [int(z) for z in b.xyxy[0]]
+            pts = np.array([[(x1, y1)], [(x1, y2)], [(x2, y2)], [(x2, y1)]])
+            cont_label = yolo_result.names[int(b.cls)]
+            yolo_conts.append(yolo_contour(cont_label, pts, x2 - x1, y2 - y1))
+        return yolo_conts
 
-    if len(conts) == 0:
-        return
-    
+def detect_cards_from_image(ocr, card_detector, image):
+    detection_result = card_detector(image, conf=0.5)
+    yolo_conts = get_contours_from_yolo(detection_result[0])
+    yolo_conts = ip.sort_cards(yolo_conts)
     # cluster nearest cards
-    grouped_near_cards = cv2utils.group_near_cards(image, conts)
+    grouped_near_cards = cv2utils.group_near_cards(image, yolo_conts)
 
     dealer_img_cards, is_one = get_dealer_cards(grouped_near_cards)
     player_img_cards = get_player_cards(grouped_near_cards)
@@ -137,7 +144,7 @@ def get_available_camera_devices():
     return cam_list
 
 
-def test_cam(ocr):
+def test_cam(ocr, card_detector):
 
     # get available camera devices
     cam_devices = get_available_camera_devices()
@@ -166,47 +173,15 @@ def test_cam(ocr):
             continue
         
         # highlight cards
-        detect_cards_from_image(ocr, frame)
+        detect_cards_from_image(ocr, card_detector, frame)
         cv2.imshow('frame', frame)
         if cv2.waitKey(144) & 0xFF == ord('q'):
             break
 
-def edit_video(ocr, vid_path):
-    source = cv2.VideoCapture(vid_path)  
-    source.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    source.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)          
-
-    # iterate through all the frames if the video clip present
-    while(source.isOpened()):                                                                                                                                                 
-        #read the frame
-        ret, frame = source.read()
-
-        detect_cards_from_image(ocr, frame)                                                                                                                                                    
-        cv2.imshow('frame', frame)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break                                                                                                                                  
-    print("Done")
-
-def test_image(ocr):
-    # img_path = "test_data/royalflush_ace/IMG20231006142219.jpg"
-    # img_path = "test_data/tilted/IMG20231007175210.jpg"
-    img_path = "test_data/card_rankings/"
-    files = [f for f in listdir(img_path) if f.endswith("jpg") and isfile(join(img_path, f))]
-    for f in files:
-        image = cv2.imread(img_path + f)
-        image = cv2.resize(image, (1920, 1080))
-        detect_cards_from_image(ocr, image)
-        cv2utils.show_image(image, f)
-    #cv2.imwrite("test.jpg", image)
-
 def main():
-    ocr = poker_ocr("training")
-    ocr.initialize()
-    test_cam(ocr)
-    #test_image(ocr)
-    #edit_video(ocr, "VID20231009234753.mp4")
-
+    ocr = YOLO(r"bestcorner.pt")
+    card_detector = YOLO(r"best.pt")
+    test_cam(ocr, card_detector)
 
 if __name__ == "__main__":
     main()

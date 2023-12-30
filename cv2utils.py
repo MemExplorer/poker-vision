@@ -30,6 +30,7 @@ class ThreadedCamera(object):
 # show image in a popup window
 def show_image(image, title = "image"):
     cv2.namedWindow(title, cv2.WINDOW_AUTOSIZE)
+    cv2.moveWindow(title, 40,30)
     cv2.imshow(title, image)
     cv2.waitKey(0)
 
@@ -59,17 +60,10 @@ def calculate_normalized_distance(point1, point2, image_width, image_height):
 
 # function for check if two objects in an image are close to one another or not
 def find_if_close(image, cnt1, cnt2):
-    threshold = 0.2
+    threshold = 0.3
     image_height, image_width, _ = image.shape
-    object_centers = []
-    for contour in [cnt1, cnt2]:
-        M = cv2.moments(contour)
-        if M["m00"] != 0:
-            cX = int(M["m10"] / M["m00"])
-            cY = int(M["m01"] / M["m00"])
-            object_centers.append((cX, cY))
 
-    normalized_distance = calculate_normalized_distance(object_centers[0], object_centers[1], image_width, image_height)
+    normalized_distance = calculate_normalized_distance(cnt1, cnt2, image_width, image_height)
     return normalized_distance < threshold
 
 # sets name of the detected card
@@ -105,7 +99,7 @@ def set_group_text(image, name, x, y):
 
 # highlights the group of cards
 def highlight_grouped_cards(image, card_group, text):
-    x,y,w,h = union(card_group[0], card_group[-1])
+    x,y,w,h = union(card_group[0].contour, card_group[-1].contour)
     wdiff = int(w * 0.05)
     hdiff = int(h * 0.05)
     x -= int(wdiff)
@@ -127,9 +121,9 @@ def group_near_cards(image, card_list):
     curr_list = []
     for i in range(len(card_list)):
         curr_list.append(card_list[i])
-        if i + 1 < len(card_list) and find_if_close(image, card_list[i], card_list[i + 1]):
+        if i + 1 < len(card_list) and find_if_close(image, card_list[i].contour, card_list[i + 1].contour):
             continue
-        curr_list.sort(key= lambda x: cv2.boundingRect(x)[0])
+        curr_list.sort(key= lambda x: cv2.boundingRect(x.contour)[0])
         ret.append(curr_list)
         curr_list = []
             
