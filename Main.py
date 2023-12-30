@@ -179,8 +179,8 @@ def test_cam(ocr, card_detector):
             break
 
 def main():
-    ocr = YOLO(r"bestcorner.pt")
-    card_detector = YOLO(r"best.pt")
+    ocr = YOLO(r"pretrained/bestcorner.pt")
+    card_detector = YOLO(r"pretrained/best.pt")
     test_cam(ocr, card_detector)
 
 if __name__ == "__main__":
